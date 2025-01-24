@@ -22,7 +22,10 @@ func NewWeatherUseCase(viaCEP service.ViaCEPServiceInterface, weatherAPI service
 func (uc *WeatherUseCase) GetWeatherByCEP(cep string) (*entity.Temperature, error) {
 	location, err := uc.ViaCEPService.GetLocationByCEP(cep)
 	if err != nil {
-		return nil, errors.New("location not found")
+		if err.Error() == "location not found" {
+			return nil, errors.New("location not found")
+		}
+		return nil, errors.New("failed to fetch location")
 	}
 
 	celsius, err := uc.WeatherAPIService.GetTemperatureByLocation(location)
@@ -30,9 +33,5 @@ func (uc *WeatherUseCase) GetWeatherByCEP(cep string) (*entity.Temperature, erro
 		return nil, errors.New("failed to fetch temperature")
 	}
 
-	return &entity.Temperature{
-		Celsius:    celsius,
-		Fahrenheit: celsius*1.8 + 32,
-		Kelvin:     celsius * 273,
-	}, nil
+	return entity.NewTemperature(celsius), nil
 }
